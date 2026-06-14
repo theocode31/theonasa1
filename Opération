@@ -1,0 +1,25 @@
+Bonsoir,
+
+Aujourd'hui, nous sommes le 14 juin 2026, je publie mon premier projet personnel, hors cadre universitaire, hors contexte professionnel qui concerne la science des données, après des certifications passées et celles que je suis encore actuellement, je pense qu'il est important de consolider les connaissances et les lier à ce que j'apprends en parallèle via 
+des projets techniques et de terrain. 
+Moi, Je suis étudiant en géomatique, spécialisé dans la donnée géospatiale. Mais ce qui me motive ici dépasse le domaine , c'est le processus lui-même,  apprendre à structurer un problème, à coder une solution, à construire quelque chose qui tient.
+Ce projet est une première tentative, imparfaite par définition. Je le mettrai à jour régulièrement, pas pour le parfaire d'un coup, mais pour progresser au fil des itérations, vers des projets plus solides, des implémentations plus propres, une compréhension plus profonde du machine learning et du deep learning.
+Si vous tombez sur ce dépôt : je ne cherche pas à vous fournir quelque chose à reproduire. Je cherche à documenter une progression, ma progression, un plan d'action que je construis en marchant, au fur et à mesure que mon expérience et ma passion en IA grandit.
+Au delà de ca , je suis intéressé par les domaines d'applications, et les connaissances que je peux acquerir liées à celles ci. J'utiliserai Pyspark, car meme, si 
+les data set que j'utiliserai au debut seront relativement faibles, je pense que je préfère utiliser , ce qui est plus important c'est la scalabilité de mon code + que de savoir si c'est la librairie que 
+j'utilise est proportionnelle à mon dataset. D'autant plus, que je me familiarise avec Github et ce n'est que le début,
+si jamais vous tombez par là par hasard, je vous souhaite une excellente soirée . et Bonne lecture:)
+
+PS: J'essaierai de faire des mises à jour relativement quotidiennes mais mon emploi du temps est trés chargé , étant donné que je suis en master/alternance et que je suis des certifications en parallèle.
+
+Donc aujourd'hui, j'ai décidé de m'approprier des données publiées par la NASA trouvées sur Kaggle ( et importer via son api),
+elles proviennet de NASA CMAPSS, il s'agit d'une simulation de la NASA d'un moteur à réaction également appelé Turbofan qui se dégrade progressivement
+jusqu'à une panne, c'est un dataset pour la prédiction de durée de vie résiduelle dont l'abréviation est RUL 
+Le dataset comporte 26 colonnes , numéro de moteur, le numéro du cycle qui = un vol ( cela comprend décollage, croisiere et aterrissage)
+Les réglages que l'on a pu identifié correspondent aux conditions de l'operation comme l'altitude, vitesse parexemple.
+Les capteurs sont les mesures physqiues du moteurs.
+Dans le fichier train, on a les données jusqu'au dernier cycle avant défaillance.
+
+Le dataset FD001 correspond par exemple à une seule conditon operationnelle, 1 seul mode de panne
+Donc vous vous en doutez, mais le but est de prédire combien de cycle ( vol) il reste  avant la panne moteur donnée. Cela pourrait etre un probleme de régression, mais également de classification (binaire par exemple)
+

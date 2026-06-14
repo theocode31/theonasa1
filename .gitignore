@@ -1,4 +1,2 @@
-*.txt
-*.pdf
 __pycache__/
 *.pyc
