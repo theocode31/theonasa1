@@ -26,6 +26,7 @@ df_propre = df_brut.toDF(*nom_colonnes)
 print("Apercu du DataFrame")
 df_propre.show(10)
 
+
 df_moteur1= df_propre.filter(df_propre.id_moteur==1)
 df_p = df_moteur1.select("cycle", "capteur_2").toPandas()
 
@@ -47,4 +48,87 @@ for moteur in moteurs:
 fig.update_layout(title="Capteur 2 pour tous les moteurs", xaxis_title="Cycle", yaxis_title="Valeur")
 fig.write_html("capteur2_tous_moteurs.html")
 
+from pyspark.sql import Window
+from pyspark.sql import functions as F
 
+window = Window.partitionBy("id_moteur")
+df_rul = df_propre.withColumn("dernier_cycle", F.max("cycle").over(window))#on cherche le max d'un moteur 
+df_rul = df_rul.withColumn("RUL", F.col("dernier_cycle") - F.col("cycle"))
+df_rul = df_rul.drop("dernier_cycle")
+
+print("Apercu avec RUL")
+df_rul.show(10)
+
+
+
+# Conversion en pandas une seule fois
+df_pandas = df_rul.toPandas()
+
+capteurs = [f"capteur_{i}" for i in range(1, 22)]
+
+fig = go.Figure()
+
+for capteur in capteurs:
+    for moteur in df_pandas["id_moteur"].unique():
+        df_m = df_pandas[df_pandas["id_moteur"] == moteur]
+        fig.add_trace(go.Scatter(
+            x=df_m["RUL"],
+            y=df_m[capteur],
+            mode="lines",
+            name=f"Moteur {moteur}",
+            visible=(capteur == "capteur_1"),
+            line=dict(width=1),
+            opacity=0.5
+        ))
+
+boutons = []
+n = len(df_pandas["id_moteur"].unique())
+for i, capteur in enumerate(capteurs):
+    visibilite = [False] * len(capteurs) * n
+    for j in range(n):
+        visibilite[i * n + j] = True
+    boutons.append(dict(
+        label=capteur,
+        method="update",
+        args=[{"visible": visibilite}, {"title": f"{capteur} en fonction du RUL"}]
+    ))
+
+fig.update_layout(
+    title="capteur_1 en fonction du RUL",
+    xaxis_title="RUL (cycles restants)",
+    yaxis_title="Valeur capteur",
+    xaxis=dict(autorange="reversed"),
+    updatemenus=[dict(buttons=boutons, direction="down", x=0.1, y=1.15, showactive=True)],
+    showlegend=False,
+    height=600
+)
+
+fig.write_html("capteurs_vs_RUL.html")
+
+colonnes_utiles = ["id_moteur", "cycle", "reglage_1", "reglage_2", "reglage_3",
+                   "capteur_2", "capteur_3", "capteur_4", "capteur_7", "capteur_8",
+                   "capteur_9", "capteur_11", "capteur_12", "capteur_13", "capteur_14",
+                   "capteur_15", "capteur_17", "capteur_20", "capteur_21", "RUL"]
+
+df_final = df_rul.select(colonnes_utiles)
+
+print("DataFrame final apres suppression des capteurs inutiles")
+df_final.show(5)
+
+from pyspark.ml.feature import VectorAssembler, MinMaxScaler
+
+capteurs_utiles = ["capteur_2", "capteur_3", "capteur_4", "capteur_7", "capteur_8",
+                   "capteur_9", "capteur_11", "capteur_12", "capteur_13", "capteur_14",
+                   "capteur_15", "capteur_17", "capteur_20", "capteur_21"]
+
+assembler = VectorAssembler(inputCols=capteurs_utiles, outputCol="features_brutes")
+df_assemble = assembler.transform(df_final)
+
+scaler = MinMaxScaler(inputCol="features_brutes", outputCol="features")
+scaler_model = scaler.fit(df_assemble)
+df_normalise = scaler_model.transform(df_assemble)
+
+df_normalise = df_normalise.drop("features_brutes")
+
+print("DataFrame normalise")
+df_normalise.select("id_moteur", "cycle", "RUL", "features").show(5, truncate=False)
