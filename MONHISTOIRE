@@ -36,4 +36,9 @@ plus cela signifie qu'il est dégradé. Erreur de ma part.
 Bonjour,
 suite à ce que l'on a fait, il faut implementer le RUL pour savoir combien de cycles ont été réalisés jusqu'au dernier cycle(panne),
 en l'occurence 191 cycles restants. De plus, pour voir de facon succinte si tous les capteurs rapportent des données exploitables , j'ai réalisé
-un graphique avec un menu déroulant ( capteurs vs RUL)
+un graphique avec un menu déroulant ( capteurs vs RUL.html) , et on voit directement que les capteurs 
+1, 5, 6, 10, 16, 18, 19 présentent seulement une ligne ne présentant strictement aucune variation . On peut les exclure de l'étude.
+La prochaine étape est une étape cruciale que j'ai d'ailleurs pu voir aujourd'hui dans le cours de AndrewNg, il faut toujours faire ce qu'il appelle du Feature scaling, pour ne pas avoir des echelles
+de valeurs trop différentes. Vous pouvez directement oberver cela sur l'axe des ordonnées . 
+Pyspark ne prend pas les colonnes séparées , donc il fallait les regrouper
+Le calcul c'est celui ci : valeur_normalisee = (valeur - min) / (max - min) , et on le fait avec Minmaxscaler
