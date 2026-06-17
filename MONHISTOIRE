@@ -23,3 +23,17 @@ Dans le fichier train, on a les données jusqu'au dernier cycle avant défaillan
 Le dataset FD001 correspond par exemple à une seule conditon operationnelle, 1 seul mode de panne
 Donc vous vous en doutez, mais le but est de prédire combien de cycle ( vol) il reste  avant la panne moteur donnée. Cela pourrait etre un probleme de régression, mais également de classification (binaire par exemple)
 
+15/06/2026
+
+Bonsoir,
+Donc aujourd'hui, je pense qu'il serait interessant de visualiser la dégradation des capteurs en fonction des cycles, normalement, plus de cycles=diminuation du rendu.
+On va vérifier ca , matplotlib est trop restreint pour autant de moteurs. 
+Apres avoir créer un graphique, j'en ai déduis que plus la valeur du capteur augmente au gré des cycles,
+plus cela signifie qu'il est dégradé. Erreur de ma part.
+
+17/06/2026
+
+Bonjour,
+suite à ce que l'on a fait, il faut implementer le RUL pour savoir combien de cycles ont été réalisés jusqu'au dernier cycle(panne),
+en l'occurence 191 cycles restants. De plus, pour voir de facon succinte si tous les capteurs rapportent des données exploitables , j'ai réalisé
+un graphique avec un menu déroulant ( capteurs vs RUL)
