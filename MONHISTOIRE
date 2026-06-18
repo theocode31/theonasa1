@@ -42,3 +42,15 @@ La prochaine étape est une étape cruciale que j'ai d'ailleurs pu voir aujourd'
 de valeurs trop différentes. Vous pouvez directement oberver cela sur l'axe des ordonnées . 
 Pyspark ne prend pas les colonnes séparées , donc il fallait les regrouper
 Le calcul c'est celui ci : valeur_normalisee = (valeur - min) / (max - min) , et on le fait avec Minmaxscaler
+
+18/06/2026
+
+En général après une normalisation , on peut entrainer un premier modele de regression popur la prédiction du RUL
+Comme on l'a dit prédecemment, Pyspark prend que des vectreurs donc on utilise Vector Assembler , puis on split de facon aleatoire le dataframe
+On utilise jsute une régression linéraire afin de voir si c'est bien linéaire, si cela est confirmé ou non, on verra pour la suite.
+On a R2 = 0.58, cela veutr dire que le modele explique 58 prct de la variance, une droite ne suffit donc pas
+MAE de 34 cycles, cela signifie qu'en moyenne le modele se trompes sur ces derniers
+RMSE= 44 cycles , les erreurs sont donc relativement fréquentes pour 191 cyucles de total.
+La relation que l'on cherchait est non linéaire , il faut utiliser un modele qui suit les points.
+Les fonctions pyspark font relativement tout pour nous. ( linear regression, regression calculator)
+On y reviendra demain.

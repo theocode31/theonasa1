@@ -132,3 +132,33 @@ df_normalise = df_normalise.drop("features_brutes")
 
 print("DataFrame normalise")
 df_normalise.select("id_moteur", "cycle", "RUL", "features").show(5, truncate=False)
+
+from pyspark.ml.regression import LinearRegression
+from pyspark.ml.evaluation import RegressionEvaluator
+
+
+df_train, df_test = df_normalise.randomSplit([0.8, 0.2], seed=42)
+
+print(f"Train : {df_train.count()} lignes | Test : {df_test.count()} lignes")
+
+
+lr = LinearRegression(featuresCol="features", labelCol="RUL", maxIter=100)
+modele_lr = lr.fit(df_train)
+
+
+predictions = modele_lr.transform(df_test)
+predictions.select("id_moteur", "cycle", "RUL", "prediction").show(10)
+
+
+evaluateur_rmse = RegressionEvaluator(labelCol="RUL", predictionCol="prediction", metricName="rmse")
+evaluateur_mae  = RegressionEvaluator(labelCol="RUL", predictionCol="prediction", metricName="mae")
+evaluateur_r2   = RegressionEvaluator(labelCol="RUL", predictionCol="prediction", metricName="r2")
+
+rmse = evaluateur_rmse.evaluate(predictions)
+mae  = evaluateur_mae.evaluate(predictions)
+r2   = evaluateur_r2.evaluate(predictions)
+
+print("Resultats de la regression lineaire")
+print(f"RMSE : {rmse:.2f} cycles")
+print(f"MAE  : {mae:.2f} cycles")
+print(f"R²   : {r2:.4f}")
