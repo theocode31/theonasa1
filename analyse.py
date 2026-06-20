@@ -55,13 +55,12 @@ window = Window.partitionBy("id_moteur")
 df_rul = df_propre.withColumn("dernier_cycle", F.max("cycle").over(window))#on cherche le max d'un moteur 
 df_rul = df_rul.withColumn("RUL", F.col("dernier_cycle") - F.col("cycle"))
 df_rul = df_rul.drop("dernier_cycle")
+df_rul = df_rul.withColumn("RUL", F.least(F.col("RUL"), F.lit(125)))
 
 print("Apercu avec RUL")
 df_rul.show(10)
 
 
-
-# Conversion en pandas une seule fois
 df_pandas = df_rul.toPandas()
 
 capteurs = [f"capteur_{i}" for i in range(1, 22)]
@@ -162,3 +161,37 @@ print("Resultats de la regression lineaire")
 print(f"RMSE : {rmse:.2f} cycles")
 print(f"MAE  : {mae:.2f} cycles")
 print(f"R²   : {r2:.4f}")
+
+from pyspark.ml.regression import GBTRegressor
+
+gbt = GBTRegressor(featuresCol="features", labelCol="RUL", maxIter=100, maxDepth=5, seed=42)
+modele_gbt = gbt.fit(df_train)
+
+predictions_gbt = modele_gbt.transform(df_test)
+predictions_gbt.select("id_moteur", "cycle", "RUL", "prediction").show(10)
+
+rmse_gbt = evaluateur_rmse.evaluate(predictions_gbt)
+mae_gbt  = evaluateur_mae.evaluate(predictions_gbt)
+r2_gbt   = evaluateur_r2.evaluate(predictions_gbt)
+
+print("Resultats GBT")
+print(f"RMSE : {rmse_gbt:.2f} cycles")
+print(f"MAE  : {mae_gbt:.2f} cycles")
+print(f"R²   : {r2_gbt:.4f}")
+
+from pyspark.ml.regression import RandomForestRegressor
+
+rf = RandomForestRegressor(featuresCol="features", labelCol="RUL", numTrees=100, maxDepth=5, seed=42)
+modele_rf = rf.fit(df_train)
+
+predictions_rf = modele_rf.transform(df_test)
+
+rmse_rf = evaluateur_rmse.evaluate(predictions_rf)
+mae_rf  = evaluateur_mae.evaluate(predictions_rf)
+r2_rf   = evaluateur_r2.evaluate(predictions_rf)
+
+print("\nComparaison ")
+print(f"{'Modele':<25} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
+print(f"{'LinearRegression':<25} {rmse:>8.2f} {mae:>8.2f} {r2:>8.4f}")
+print(f"{'GBTRegressor':<25} {rmse_gbt:>8.2f} {mae_gbt:>8.2f} {r2_gbt:>8.4f}")
+print(f"{'RandomForest':<25} {rmse_rf:>8.2f} {mae_rf:>8.2f} {r2_rf:>8.4f}")

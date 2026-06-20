@@ -54,3 +54,15 @@ RMSE= 44 cycles , les erreurs sont donc relativement fréquentes pour 191 cyucle
 La relation que l'on cherchait est non linéaire , il faut utiliser un modele qui suit les points.
 Les fonctions pyspark font relativement tout pour nous. ( linear regression, regression calculator)
 On y reviendra demain.
+
+20/06/2026
+
+Maintenant, le but est de comparer le resultat avec des modeles supposés plus performant pour des données 
+tabulaires non linéaire. On peut utilsir random forest, gbt, xgboost, et on va commencer par voir les resultats de gb
+J'aimerai notifier qu'il est noté dans les informations que le RUL a tendance a etre plafonné et ne pas indiquer
+les vraies valeurs sur CMAPPSS ( des articles de recherche) . Mais déjà pour ce qui est des modeles, on peut oberver que:
+Comparaison 
+Modele                        RMSE      MAE       R²
+LinearRegression             44.87    34.54   0.5768
+GBTRegressor                 42.31    30.30   0.6238
+donc le rsultat est meilleur mais modeste . 
