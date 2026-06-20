@@ -66,3 +66,16 @@ Modele                        RMSE      MAE       R²
 LinearRegression             44.87    34.54   0.5768
 GBTRegressor                 42.31    30.30   0.6238
 donc le rsultat est meilleur mais modeste . 
+Mais en fait; pour revenir à la litterature évoquée, le plafond dont on parlait à tendance à arriver entre 100 et 150 RUL restants ( visible dans mon  capteurs_vs_RUL.html),
+on peut essayer d'appliquer un plafond juste avant autour de 125 ( F.least(col("RUL"), lit(125)))
+le plafonnement a reellement tout changé :
+Comparaison 
+Modele                        RMSE      MAE       R²
+LinearRegression             21.75    17.89   0.7306
+GBTRegressor                 18.89    13.62   0.7968
+
+Cela signgie que GBT explique maintenant la variance RUL a hauteur de 80 prct. Et les erreurs moyennes RMSE sont divisées par 2 .
+Cela montre qu'il est interessant d'entrainer déjà deux modeles pour voir si il y a un probleme dans les données elles memes
+que l'on pourrait éventuellement améliorée. On pourrait notammer comparer avec TreeForest et aussi trouver un moyen d'affiner les features et caracteristiques des modele
+utilisés, ce que je n'ai pas encore le temps de voir. 
+
