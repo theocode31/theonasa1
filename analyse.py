@@ -7,6 +7,7 @@ from pyspark.sql import SparkSession
 
 spark = SparkSession.builder \
     .appName("Firstproject") \
+    .config("spark.driver.memory", "4g") \
     .getOrCreate()
 
 df_brut = spark.read.csv(
@@ -195,3 +196,33 @@ print(f"{'Modele':<25} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
 print(f"{'LinearRegression':<25} {rmse:>8.2f} {mae:>8.2f} {r2:>8.4f}")
 print(f"{'GBTRegressor':<25} {rmse_gbt:>8.2f} {mae_gbt:>8.2f} {r2_gbt:>8.4f}")
 print(f"{'RandomForest':<25} {rmse_rf:>8.2f} {mae_rf:>8.2f} {r2_rf:>8.4f}")
+
+
+
+profondeurs = [3, 5]
+iterations  = [50, 100]
+
+print("\nAmelioration GBT22/06/2026")
+print(f"{'maxDepth':<12} {'maxIter':<12} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
+
+meilleur_rmse   = float("inf")
+meilleurs_params = {}
+
+for depth in profondeurs:
+    for n_iter in iterations:
+        gbt_tune = GBTRegressor(featuresCol="features", labelCol="RUL",
+                                maxDepth=depth, maxIter=n_iter, seed=42)
+        modele_tune      = gbt_tune.fit(df_train)
+        predictions_tune = modele_tune.transform(df_test)
+
+        r_rmse = evaluateur_rmse.evaluate(predictions_tune)
+        r_mae  = evaluateur_mae.evaluate(predictions_tune)
+        r_r2   = evaluateur_r2.evaluate(predictions_tune)
+
+        print(f"{depth:<12} {n_iter:<12} {r_rmse:>8.2f} {r_mae:>8.2f} {r_r2:>8.4f}")
+
+        if r_rmse < meilleur_rmse:
+            meilleur_rmse    = r_rmse
+            meilleurs_params = {"maxDepth": depth, "maxIter": n_iter}
+
+print(f"\nMeilleure combinaison : {meilleurs_params} avec RMSE = {meilleur_rmse:.2f}")

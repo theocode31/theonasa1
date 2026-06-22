@@ -79,3 +79,22 @@ Cela montre qu'il est interessant d'entrainer déjà deux modeles pour voir si i
 que l'on pourrait éventuellement améliorée. On pourrait notammer comparer avec TreeForest et aussi trouver un moyen d'affiner les features et caracteristiques des modele
 utilisés, ce que je n'ai pas encore le temps de voir. 
 
+22/06/2026
+
+Comme dit dans le paragraphe ci-dessus notre but est de changer differentres valeurs de GBT
+In change la profondeur(depth) qui correspond en fait un arbre avec une série de question
+ici , on choisit 3 et 50 iterations, 1 iteration qui est un nouvelle arbre qui corrige les erreurs
+du précedent. Mais on peut se dire que mettre davantage d'iterations peut donner un résultat 
+meilleur, mais il faut faire attention à l'overfitting , il y a une juste limite à ne pas dépasser c'est donc ce que l'on va tester.
+Amelioration GBT
+maxDepth     maxIter          RMSE      MAE       R²
+3            50              18.81    13.92   0.7986
+3            100             18.38    13.44   0.8076
+5            50              18.90    13.67   0.7967
+5            100             18.89    13.62   0.7968
+
+Ici,  on voit la différence claire entre notre premier résultat(dont les valeurs pour le parametre depth et iter 5,100 respectivement sont quasi similaires) et notre GBT amélioré
+Augmmenter la profondeur ne confere pas un meilleur resultat, au contraire
+prendre une profondeur d 3 améliore le resultat pour FD001. Avec le travail réalisé jusqu'a maintenant,
+on peut déjà avoir une visualisaiton des prédictions, on va pouvoir de facon générale, voir ou notre modele se trompe et la ou il est bon, il faudra
+notamment passer a FD002/FD003 et FD004. 
