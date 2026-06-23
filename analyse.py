@@ -226,3 +226,44 @@ for depth in profondeurs:
             meilleurs_params = {"maxDepth": depth, "maxIter": n_iter}
 
 print(f"\nMeilleure combinaison : {meilleurs_params} avec RMSE = {meilleur_rmse:.2f}")
+#23/06/26
+gbt_final = GBTRegressor(featuresCol="features", labelCol="RUL", maxDepth=3, maxIter=100, seed=42)
+predictions_final = gbt_final.fit(df_train).transform(df_test)
+
+df_visu = predictions_final.select("id_moteur", "cycle", "RUL", "prediction").toPandas()
+df_visu.columns = ["moteur", "cycle", "RUL_reel", "RUL_predit"]
+
+fig = go.Figure()
+
+for moteur in sorted(df_visu["moteur"].unique()):
+    df_m = df_visu[df_visu["moteur"] == moteur].sort_values("cycle")
+    fig.add_trace(go.Scatter(x=df_m["cycle"], y=df_m["RUL_reel"],
+                             mode="lines", name=f"Reel M{moteur}",
+                             line=dict(color="steelblue", width=1), opacity=0.4,
+                             visible=(moteur == df_visu["moteur"].unique()[0])))
+    fig.add_trace(go.Scatter(x=df_m["cycle"], y=df_m["RUL_predit"],
+                             mode="lines", name=f"Predit M{moteur}",
+                             line=dict(color="tomato", width=1, dash="dash"), opacity=0.4,
+                             visible=(moteur == df_visu["moteur"].unique()[0])))
+
+moteurs_uniques = sorted(df_visu["moteur"].unique())
+n_traces = 2
+boutons_visu = []
+for i, m in enumerate(moteurs_uniques):
+    visibilite = [False] * len(moteurs_uniques) * n_traces
+    visibilite[i * n_traces]     = True
+    visibilite[i * n_traces + 1] = True
+    boutons_visu.append(dict(label=f"Moteur {m}", method="update",
+                             args=[{"visible": visibilite}, {"title": f"RUL reel vs predit - Moteur {m}"}]))
+
+fig.update_layout(
+    title="RUL reel vs predit - GBT optimal",
+    xaxis_title="Cycle",
+    yaxis_title="RUL (cycles restants)",
+    updatemenus=[dict(buttons=boutons_visu, direction="down", x=0.1, y=1.15, showactive=True)],
+    showlegend=True,
+    height=600
+)
+
+fig.write_html("rul_reel_vs_predit.html")
+print("Graphique sauvegarder : rul_reel_vs_predit.html")

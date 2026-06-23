@@ -81,8 +81,8 @@ utilisés, ce que je n'ai pas encore le temps de voir.
 
 22/06/2026
 
-Comme dit dans le paragraphe ci-dessus notre but est de changer differentres valeurs de GBT
-In change la profondeur(depth) qui correspond en fait un arbre avec une série de question
+Comme dit dans le paragraphe ci-dessus notre but est de changer differentres valeurs de GBT ( ses features)
+On change la profondeur(depth) qui correspond en fait un arbre avec une série de question
 ici , on choisit 3 et 50 iterations, 1 iteration qui est un nouvelle arbre qui corrige les erreurs
 du précedent. Mais on peut se dire que mettre davantage d'iterations peut donner un résultat 
 meilleur, mais il faut faire attention à l'overfitting , il y a une juste limite à ne pas dépasser c'est donc ce que l'on va tester.
@@ -95,6 +95,16 @@ maxDepth     maxIter          RMSE      MAE       R²
 
 Ici,  on voit la différence claire entre notre premier résultat(dont les valeurs pour le parametre depth et iter 5,100 respectivement sont quasi similaires) et notre GBT amélioré
 Augmmenter la profondeur ne confere pas un meilleur resultat, au contraire
-prendre une profondeur d 3 améliore le resultat pour FD001. Avec le travail réalisé jusqu'a maintenant,
+prendre une profondeur de 3 améliore le resultat pour FD001. Avec le travail réalisé jusqu'a maintenant,
 on peut déjà avoir une visualisaiton des prédictions, on va pouvoir de facon générale, voir ou notre modele se trompe et la ou il est bon, il faudra
 notamment passer a FD002/FD003 et FD004. 
+
+23/06/2026
+
+Good evening, comme dit hier, apres avoir réalisé ce travail, il est nécessaire d'ajouter une visualisation.
+Avec en rouge, le RUL prédit et en bleu le rul reel. 
+Le probleme c'est qu'il y a clairement 
+beaucoup de pics et creux , mais la trajectoire est bonne , cela veut dire que tout ce bruit est attenuable
+car dans le fond la trajectoire est bonne . Il faudrait donc plus faire une moyenne glissante des 5 ou 10  derniers cycles pour eviter ces creux cela me semble etre 
+la meilleure des solutions pour le moment.
+On le fera demain.
