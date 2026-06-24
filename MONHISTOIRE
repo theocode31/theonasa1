@@ -108,3 +108,15 @@ beaucoup de pics et creux , mais la trajectoire est bonne , cela veut dire que t
 car dans le fond la trajectoire est bonne . Il faudrait donc plus faire une moyenne glissante des 5 ou 10  derniers cycles pour eviter ces creux cela me semble etre 
 la meilleure des solutions pour le moment.
 On le fera demain.
+
+24/06/2026
+J'ai pu regarder la litterature CMAPSS , et certains méthodes sont mise en avant:
+la moyenne (tendance), l'ecart type(variabilité) et delta (vitesse changement) .
+Je propose donc que l'on implémente tout cela.
+Modele                                  RMSE      MAE       R²
+GBT optimal (sans lissage)             18.38                  
+GBT + moyennes glissantes              16.86    12.17   0.8382
+Si l'on ajoute ces calculs en plus de GBT, on remarque immédiatement que le resultat 
+s'améliore encore ! Je vais passer dorénavant aux autres datasets et revenir sur celui-là plus tard pour voir si 'lon peut encore
+améliorer la prédiction.
+

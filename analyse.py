@@ -267,3 +267,36 @@ fig.update_layout(
 
 fig.write_html("rul_reel_vs_predit.html")
 print("Graphique sauvegarder : rul_reel_vs_predit.html")
+
+
+capteurs_retenus = ["capteur_2", "capteur_3", "capteur_4", "capteur_7", "capteur_8",
+                    "capteur_9", "capteur_11", "capteur_12", "capteur_13", "capteur_14",
+                    "capteur_15", "capteur_17", "capteur_20", "capteur_21"]
+
+window_glissant = Window.partitionBy("id_moteur").orderBy("cycle").rowsBetween(-9, 0)
+#je dis window = fenetre pas pour le systeme d'exploitation
+df_lisse = df_rul
+for capteur in capteurs_retenus:
+    df_lisse = df_lisse.withColumn(f"{capteur}_moy", F.avg(capteur).over(window_glissant))
+
+capteurs_moy = [f"{c}_moy" for c in capteurs_retenus]
+
+assembler_moy = VectorAssembler(inputCols=capteurs_moy, outputCol="features_brutes_moy")
+df_lisse      = assembler_moy.transform(df_lisse)
+
+scaler_moy = MinMaxScaler(inputCol="features_brutes_moy", outputCol="features_moy")
+df_lisse   = scaler_moy.fit(df_lisse).transform(df_lisse).drop("features_brutes_moy")
+
+df_train_moy, df_test_moy = df_lisse.randomSplit([0.8, 0.2], seed=42)
+
+gbt_moy         = GBTRegressor(featuresCol="features_moy", labelCol="RUL", maxDepth=3, maxIter=100, seed=42)
+predictions_moy = gbt_moy.fit(df_train_moy).transform(df_test_moy)
+
+rmse_moy = evaluateur_rmse.evaluate(predictions_moy)
+mae_moy  = evaluateur_mae.evaluate(predictions_moy)
+r2_moy   = evaluateur_r2.evaluate(predictions_moy)
+
+print("\nComparaison avant / apres moyennes glissantes")
+print(f"{'Modele':<35} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
+print(f"{'GBT optimal (sans lissage)':<35} {meilleur_rmse:>8.2f} {'':>8} {'':>8}")
+print(f"{'GBT + moyennes glissantes':<35} {rmse_moy:>8.2f} {mae_moy:>8.2f} {r2_moy:>8.4f}")
