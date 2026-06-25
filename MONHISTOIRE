@@ -120,3 +120,13 @@ Si l'on ajoute ces calculs en plus de GBT, on remarque immédiatement que le res
 s'améliore encore ! Je vais passer dorénavant aux autres datasets et revenir sur celui-là plus tard pour voir si 'lon peut encore
 améliorer la prédiction.
 
+25/06/2026
+( Just for information, i will speak in english for now). 
+Today, we are going to examine the status of our FD002, FD003, and FD004 datasets. I used the same pipeline we developed together, with an RUL cap of 125, averaging, and a GBT depth of 3 with 100 iterations. 
+Dataset        RMSE      MAE       R²
+FD001         16.86    12.17   0.8382
+FD002         23.37    18.71   0.6848
+FD003         15.74    10.44   0.8507
+FD004         23.57    18.20   0.6638
+What conclusions can be drawn? For models FD001 and FD003, the results are excellent, unlike those of the other two; performance depends on the level of degradation or on speed and altitude conditions. While we cannot be more specific at this stage,
+ we expect better results tomorrow.
