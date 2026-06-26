@@ -130,3 +130,14 @@ FD003         15.74    10.44   0.8507
 FD004         23.57    18.20   0.6638
 What conclusions can be drawn? For models FD001 and FD003, the results are excellent, unlike those of the other two; performance depends on the level of degradation or on speed and altitude conditions. While we cannot be more specific at this stage,
  we expect better results tomorrow.
+
+ 26/06/2026*
+ This evening, we add the settings . As we can see :
+ Avec reglage_1/2/3 comme features
+Dataset        RMSE      MAE       R²
+FD001         16.99    12.34   0.8356
+FD002         23.38    18.74   0.6844
+FD003         15.62    10.34   0.8528
+FD004         23.12    17.80   0.6764
+The evolution is clearly marginal. So how will we do to see a visible
+difference ? 

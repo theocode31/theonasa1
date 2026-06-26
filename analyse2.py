@@ -68,3 +68,47 @@ for dataset in datasets:
     r2   = evaluateur_r2.evaluate(predictions)
 
     print(f"{dataset:<10} {rmse:>8.2f} {mae:>8.2f} {r2:>8.4f}")
+
+# ─── AVEC REGLAGES ───────────────────────────────────────────────────────────
+
+capteurs_avec_reglages = ["reglage_1", "reglage_2", "reglage_3"] + capteurs_retenus
+
+print(f"\nAvec reglage_1/2/3 comme features")
+print(f"{'Dataset':<10} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
+
+for dataset in datasets:
+
+    df_brut = spark.read.csv(
+        f"train_{dataset}.txt",
+        sep=" ", header=False, inferSchema=True
+    )
+    df_brut = df_brut.select(df_brut.columns[:26])
+    df      = df_brut.toDF(*nom_colonnes)
+
+    window = Window.partitionBy("id_moteur")
+    df = df.withColumn("dernier_cycle", F.max("cycle").over(window))
+    df = df.withColumn("RUL", F.col("dernier_cycle") - F.col("cycle"))
+    df = df.drop("dernier_cycle")
+    df = df.withColumn("RUL", F.least(F.col("RUL"), F.lit(125)))
+
+    window_glissant = Window.partitionBy("id_moteur").orderBy("cycle").rowsBetween(-9, 0)
+    for capteur in capteurs_avec_reglages:
+        df = df.withColumn(f"{capteur}_moy", F.avg(capteur).over(window_glissant))
+
+    capteurs_moy = [f"{c}_moy" for c in capteurs_avec_reglages]
+
+    assembler = VectorAssembler(inputCols=capteurs_moy, outputCol="features_brutes")
+    df        = assembler.transform(df)
+    scaler    = MinMaxScaler(inputCol="features_brutes", outputCol="features")
+    df        = scaler.fit(df).transform(df).drop("features_brutes")
+
+    df_train, df_test = df.randomSplit([0.8, 0.2], seed=42)
+
+    gbt         = GBTRegressor(featuresCol="features", labelCol="RUL", maxDepth=3, maxIter=100, seed=42)
+    predictions = gbt.fit(df_train).transform(df_test)
+
+    rmse = evaluateur_rmse.evaluate(predictions)
+    mae  = evaluateur_mae.evaluate(predictions)
+    r2   = evaluateur_r2.evaluate(predictions)
+
+    print(f"{dataset:<10} {rmse:>8.2f} {mae:>8.2f} {r2:>8.4f}")
