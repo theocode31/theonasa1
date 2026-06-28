@@ -141,3 +141,27 @@ FD003         15.62    10.34   0.8528
 FD004         23.12    17.80   0.6764
 The evolution is clearly marginal. So how will we do to see a visible
 difference ? 
+
+28/06/2026
+I just figured out that features we applied werent enough because if we compute
+several captors in every cycles, our model wont make the difference between high or low altitude.
+So we have to normalize by operatinnnal conditon, to see deviation from the condition's normale.
+K means is better because it brings together similar points like " lets create 6 groups in my dataset" ( but it doesnt make the "nomination" of these different groups)
+Avec normalisation par condition operationnelle (KMeans k=6)
+Dataset        RMSE      
+FD001         17.01    
+FD002         18.42    
+FD003         15.27    
+FD004         17.35    
+
+Avec reglage_1/2/3 comme features
+Dataset        RMSE      
+FD001         16.99    
+FD002         23.38    
+FD003         15.62    
+FD004         23.12    
+
+FD001 and FD003 havent change, the normalisation was enough
+but FD002 and FD004 are strongly better, our reasoning was good in this cas!
+i think we have brought enough modification , it will be interesting to use a dL 
+model to increase performance. We will do this tomorrow

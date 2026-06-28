@@ -69,9 +69,62 @@ for dataset in datasets:
 
     print(f"{dataset:<10} {rmse:>8.2f} {mae:>8.2f} {r2:>8.4f}")
 
-# ─── AVEC REGLAGES ───────────────────────────────────────────────────────────
-
 capteurs_avec_reglages = ["reglage_1", "reglage_2", "reglage_3"] + capteurs_retenus
+
+
+from pyspark.ml.clustering import KMeans
+
+print(f"\nAvec normalisation par condition operationnelle (KMeans k=6)")
+print(f"{'Dataset':<10} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
+
+for dataset in datasets:
+
+    df_brut = spark.read.csv(f"train_{dataset}.txt", sep=" ", header=False, inferSchema=True)
+    df_brut = df_brut.select(df_brut.columns[:26])
+    df      = df_brut.toDF(*nom_colonnes)
+
+    window = Window.partitionBy("id_moteur")
+    df = df.withColumn("dernier_cycle", F.max("cycle").over(window))
+    df = df.withColumn("RUL", F.col("dernier_cycle") - F.col("cycle"))
+    df = df.drop("dernier_cycle")
+    df = df.withColumn("RUL", F.least(F.col("RUL"), F.lit(125)))
+
+    assembler_reglages = VectorAssembler(inputCols=["reglage_1", "reglage_2", "reglage_3"],
+                                         outputCol="reglages_vec")
+    df = assembler_reglages.transform(df)
+    kmeans = KMeans(featuresCol="reglages_vec", predictionCol="condition", k=6, seed=42)
+    df = kmeans.fit(df).transform(df).drop("reglages_vec")
+
+    window_cond = Window.partitionBy("condition")
+    for capteur in capteurs_retenus:
+        min_c = F.min(capteur).over(window_cond)
+        max_c = F.max(capteur).over(window_cond)
+        df = df.withColumn(f"{capteur}_norm",
+                           (F.col(capteur) - min_c) / (max_c - min_c + F.lit(1e-8)))
+
+    capteurs_norm = [f"{c}_norm" for c in capteurs_retenus]
+
+    window_glissant = Window.partitionBy("id_moteur").orderBy("cycle").rowsBetween(-9, 0)
+    for c in capteurs_norm:
+        df = df.withColumn(f"{c}_moy", F.avg(c).over(window_glissant))
+
+    capteurs_finaux = [f"{c}_moy" for c in capteurs_norm]
+
+    assembler = VectorAssembler(inputCols=capteurs_finaux, outputCol="features")
+    df        = assembler.transform(df)
+
+    df_train, df_test = df.randomSplit([0.8, 0.2], seed=42)
+
+    gbt         = GBTRegressor(featuresCol="features", labelCol="RUL", maxDepth=3, maxIter=100, seed=42)
+    predictions = gbt.fit(df_train).transform(df_test)
+
+    rmse_k = evaluateur_rmse.evaluate(predictions)
+    mae_k  = evaluateur_mae.evaluate(predictions)
+    r2_k   = evaluateur_r2.evaluate(predictions)
+
+    print(f"{dataset:<10} {rmse_k:>8.2f} {mae_k:>8.2f} {r2_k:>8.4f}")
+
+
 
 print(f"\nAvec reglage_1/2/3 comme features")
 print(f"{'Dataset':<10} {'RMSE':>8} {'MAE':>8} {'R²':>8}")
