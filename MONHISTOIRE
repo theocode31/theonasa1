@@ -165,3 +165,27 @@ FD001 and FD003 havent change, the normalisation was enough
 but FD002 and FD004 are strongly better, our reasoning was good in this cas!
 i think we have brought enough modification , it will be interesting to use a dL 
 model to increase performance. We will do this tomorrow
+
+30/06/2026
+J'ai attendu spécifiquement aujourd'hui pour débuter le deeplearning tout simplement
+car c'est ce que j'ai suivi dans "la formation des reseaux neuronaux", en evoquant , sous forme détaillée,
+l'usitilsiation de tensor flow, typiqement, sequentiel, dense, activation, les pertes avec compile, fit ect.
+On va donc essayer 100 iterations que l'on appelle notamment epochs et on va voir ce que cela donne.
+On utilise le meme debut de script que analyse.py (1) mais on convertit en pandas pour utiliser tensorflow
+Modele                                  RMSE      MAE
+GBT + moyennes glissantes              16.86    12.17
+LSTM (preprocessing PySpark)           41.74    36.99
+Je m'étais rendu compte que c'était sur un modele non normalisé ; 
+il faut donc le faire avec Minmaxscaler
+Comparaison des modeles
+Modele                                  RMSE      MAE
+GBT + moyennes glissantes              16.86    12.17
+LSTM (preprocessing PySpark)           12.73     9.26
+Le LSTM surpasse le GBT de 25% en RMSE. La raison est simple : GBT traite chaque
+cycle independamment, le LSTM voit les 30 derniers cycles d un coup et detecte
+la trajectoire de degradation. C est l avantage fondamental du deep learning sur
+les series temporelles.
+Architecture : LSTM(64), Dropout( ou l'on eteint un pourcentage volontaire de neuronnes pour eviter l'overfitting), LSTM(32) , Dropout , Dense(16) ,; Dense(1)
+EarlyStopping sur val_loss avec patience=10,il est bon car ca sert a rien de continuer si le resultat est de 
+moins en moins bon.
+J'essaierai de voir comment améliorer le resultat mais également regarder pour les autres FD
