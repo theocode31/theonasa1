@@ -113,3 +113,92 @@ print(f"\nComparaison des modeles")
 print(f"{'Modele':<35} {'RMSE':>8} {'MAE':>8}")
 print(f"{'GBT + moyennes glissantes':<35} {'16.86':>8} {'12.17':>8}")
 print(f"{'LSTM (preprocessing PySpark)':<35} {rmse:>8.2f} {mae:>8.2f}")
+#01/07/2026
+spark2 = SparkSession.builder \
+    .appName("NASA_LSTM_enrichi") \
+    .config("spark.driver.memory", "4g") \
+    .getOrCreate()
+
+df2_brut = spark2.read.csv("train_FD001.txt", sep=" ", header=False, inferSchema=True)
+df2_brut = df2_brut.select(df2_brut.columns[:26])
+df2      = df2_brut.toDF(*col_names)
+
+window_moteur2 = Window.partitionBy("id_moteur")
+df2 = df2.withColumn("dernier_cycle", F.max("cycle").over(window_moteur2))
+df2 = df2.withColumn("RUL", F.col("dernier_cycle") - F.col("cycle"))
+df2 = df2.drop("dernier_cycle")
+df2 = df2.withColumn("RUL", F.least(F.col("RUL"), F.lit(125)))
+
+window_glissant2 = Window.partitionBy("id_moteur").orderBy("cycle").rowsBetween(-9, 0)
+window_lag2      = Window.partitionBy("id_moteur").orderBy("cycle")
+
+for capteur in capteurs:
+    df2 = df2.withColumn(f"{capteur}_moy",   F.avg(capteur).over(window_glissant2))
+    df2 = df2.withColumn(f"{capteur}_std",   F.stddev(capteur).over(window_glissant2))
+    df2 = df2.withColumn(f"{capteur}_delta", F.col(capteur) - F.lag(capteur, 1).over(window_lag2))
+
+capteurs_std   = [f"{c}_std"   for c in capteurs]
+capteurs_delta = [f"{c}_delta" for c in capteurs]
+toutes_features = capteurs_moy + capteurs_std + capteurs_delta
+
+for col_name in capteurs_std + capteurs_delta:
+    df2 = df2.fillna(0, subset=[col_name])
+
+df2_pandas = df2.select(["id_moteur", "cycle", "RUL"] + toutes_features).toPandas()
+df2_pandas = df2_pandas.sort_values(["id_moteur", "cycle"]).reset_index(drop=True)
+
+scaler_np2 = MinMaxScaler()
+df2_pandas[toutes_features] = scaler_np2.fit_transform(df2_pandas[toutes_features])
+
+print("Preprocessing enrichi (moy + std + delta) termine")
+spark2.stop()
+
+def creer_sequences_enr(dataframe, fenetre):
+    X, y = [], []
+    for moteur in dataframe["id_moteur"].unique():
+        df_m = dataframe[dataframe["id_moteur"] == moteur]
+        vals = df_m[toutes_features].values
+        rul  = df_m["RUL"].values
+        for i in range(fenetre, len(vals)):
+            X.append(vals[i - fenetre:i])
+            y.append(rul[i])
+    return np.array(X), np.array(y)
+
+df2_train = df2_pandas[df2_pandas["id_moteur"].isin(moteurs_train)]
+df2_test  = df2_pandas[df2_pandas["id_moteur"].isin(moteurs_test)]
+
+X2_train, y2_train = creer_sequences_enr(df2_train, FENETRE)
+X2_test,  y2_test  = creer_sequences_enr(df2_test,  FENETRE)
+
+print(f"Train enrichi : {X2_train.shape} | Test enrichi : {X2_test.shape}")
+
+modele_enr = Sequential([
+    LSTM(64, input_shape=(FENETRE, len(toutes_features)), return_sequences=True),
+    Dropout(0.2),
+    LSTM(32),
+    Dropout(0.2),
+    Dense(16, activation="relu"),
+    Dense(1)
+])
+
+modele_enr.compile(optimizer="adam", loss="mse", metrics=["mae"])
+modele_enr.summary()
+
+early_stop_enr = EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)
+
+modele_enr.fit(
+    X2_train, y2_train,
+    epochs=100,
+    batch_size=64,
+    validation_split=0.1,
+    callbacks=[early_stop_enr],
+    verbose=1
+)
+
+loss_enr, mae_enr = modele_enr.evaluate(X2_test, y2_test, verbose=0)
+rmse_enr = np.sqrt(loss_enr)
+
+print(f"\nComparaison LSTM features")
+print(f"{'Modele':<40} {'RMSE':>8} {'MAE':>8}")
+print(f"{'LSTM moy (14 features)':<40} {rmse:>8.2f} {mae:>8.2f}")
+print(f"{'LSTM moy+std+delta (42 features)':<40} {rmse_enr:>8.2f} {mae_enr:>8.2f}")
