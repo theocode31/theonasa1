@@ -13,7 +13,7 @@ si jamais vous tombez par là par hasard, je vous souhaite une excellente soiré
 PS: J'essaierai de faire des mises à jour relativement quotidiennes mais mon emploi du temps est trés chargé , étant donné que je suis en master/alternance et que je suis des certifications en parallèle.
 
 Donc aujourd'hui, j'ai décidé de m'approprier des données publiées par la NASA trouvées sur Kaggle ( et importer via son api),
-elles proviennet de NASA CMAPSS, il s'agit d'une simulation de la NASA d'un moteur à réaction également appelé Turbofan qui se dégrade progressivement
+elles proviennet de NASA CMAPSS ( dont les spécifités techniques qui orientent mes choix et mon connaissances proviennent :https://c3.ndc.nasa.gov/dashlink/static/media/publication/2008_IEEEPHM_CMAPPSDamagePropagation.pdf ), il s'agit d'une simulation de la NASA d'un moteur à réaction également appelé Turbofan qui se dégrade progressivement
 jusqu'à une panne, c'est un dataset pour la prédiction de durée de vie résiduelle dont l'abréviation est RUL 
 Le dataset comporte 26 colonnes , numéro de moteur, le numéro du cycle qui = un vol ( cela comprend décollage, croisiere et aterrissage)
 Les réglages que l'on a pu identifié correspondent aux conditions de l'operation comme l'altitude, vitesse parexemple.
@@ -189,3 +189,34 @@ Architecture : LSTM(64), Dropout( ou l'on eteint un pourcentage volontaire de ne
 EarlyStopping sur val_loss avec patience=10,il est bon car ca sert a rien de continuer si le resultat est de 
 moins en moins bon.
 J'essaierai de voir comment améliorer le resultat mais également regarder pour les autres FD
+
+01/07/2026
+Comme nous l'avions pour GBT+moyennes glissantes, on peut ajouter
+notamment, de nouvelles features telles que l'ecart type et delta , respectivement pour voir si le capteur est stable ou agité,
+et delta, pour la vitesse du changement. On espere avoir un meilleur resultat sur l'etat de degradation.
+Comparaison LSTM features
+Modele                                       RMSE      MAE
+LSTM moy (14 features)                      11.88     8.58
+LSTM moy+std+delta (42 features)            13.09     8.94
+Opération réussie : le processus de PID 2476 (processus en
+
+Le resultat s'avere donc contraire à ce que l'on esperait nous nous attendions à voir une 
+amelioration notble sur l'ajout des features mais en fait, il est moins bon .
+D'apres ce que j'ai compris , GBT calcule independamment chaque cycle, ajouter lui permet de lui dionner un trajectoire
+mais LSTM calcule tout ca lui meme donc ajout= bruit. 
+C'est donc bien d'ajuter les feature mais que pour les modeles statiques pas pour les modeles en sequence.
+
+02/07/2026
+
+On applique le meme process d"sormais pour les 3 autres datasets:
+Dataset	RMSE LSTM	GBT base	Diff
+FD001	12.21	  16.86	      -4.65
+FD002	17.63	  23.37	      -5.74
+FD003	12.60	  15.74	      -3.14
+FD004	23.11	  23.57	      -0.46
+Le LSTM gagne sur les 4 datasets. FD002 est tres bon. FD004 reste difficile
+(-0.46 seulement), le dataset le plus complexe nécessiterait probablement
+un ajout de feature ou dans le modele LSTM en general pour vraiment progresser.
+A tritre precisition , la comparaison a été effectué sur le GBT de base que l'on avait fait dans l'ancien
+analyse.py , le RMSE calculé est effectué sur le LSTM.
+On pourrait donc essayer d'ajuster le modele pour FD004.

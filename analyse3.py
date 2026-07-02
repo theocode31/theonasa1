@@ -15,9 +15,6 @@ from pyspark.sql import Window
 from pyspark.sql import functions as F
 from sklearn.preprocessing import MinMaxScaler
 
-# PySpark MLlib na pas de LSTM natif. On utilise PySpark pour charger,
-# calculer le RUL, lisser et normaliser. TensorFlow prend ensuite le relai.
-
 spark = SparkSession.builder \
     .appName("NASA_LSTM") \
     .config("spark.driver.memory", "4g") \
@@ -202,3 +199,72 @@ print(f"\nComparaison LSTM features")
 print(f"{'Modele':<40} {'RMSE':>8} {'MAE':>8}")
 print(f"{'LSTM moy (14 features)':<40} {rmse:>8.2f} {mae:>8.2f}")
 print(f"{'LSTM moy+std+delta (42 features)':<40} {rmse_enr:>8.2f} {mae_enr:>8.2f}")
+
+#02/07/2026
+
+datasets = ["FD001", "FD002", "FD003", "FD004"]
+
+gbt_base = {"FD001": 16.86, "FD002": 23.37, "FD003": 15.74, "FD004": 23.57}
+
+print(f"\nLSTM sur tous les datasets")
+print(f"{'Dataset':<10} {'RMSE LSTM':>12} {'GBT base':>12} {'Diff':>8}")
+
+spark3 = SparkSession.builder \
+    .appName("NASA_LSTM_tous") \
+    .config("spark.driver.memory", "4g") \
+    .getOrCreate()
+
+for dataset in datasets:
+
+    df3_brut = spark3.read.csv(f"train_{dataset}.txt", sep=" ", header=False, inferSchema=True)
+    df3_brut = df3_brut.select(df3_brut.columns[:26])
+    df3      = df3_brut.toDF(*col_names)
+
+    w_moteur = Window.partitionBy("id_moteur")
+    df3 = df3.withColumn("dernier_cycle", F.max("cycle").over(w_moteur))
+    df3 = df3.withColumn("RUL", F.col("dernier_cycle") - F.col("cycle"))
+    df3 = df3.drop("dernier_cycle")
+    df3 = df3.withColumn("RUL", F.least(F.col("RUL"), F.lit(125)))
+
+    w_glissant = Window.partitionBy("id_moteur").orderBy("cycle").rowsBetween(-9, 0)
+    for capteur in capteurs:
+        df3 = df3.withColumn(f"{capteur}_moy", F.avg(capteur).over(w_glissant))
+
+    df3_pandas = df3.select(["id_moteur", "cycle", "RUL"] + capteurs_moy).toPandas()
+    df3_pandas = df3_pandas.sort_values(["id_moteur", "cycle"]).reset_index(drop=True)
+
+    scaler3 = MinMaxScaler()
+    df3_pandas[capteurs_moy] = scaler3.fit_transform(df3_pandas[capteurs_moy])
+
+    moteurs3 = df3_pandas["id_moteur"].unique()
+    m_train3, m_test3 = train_test_split(moteurs3, test_size=0.2, random_state=42)
+
+    X3_train, y3_train = creer_sequences(df3_pandas[df3_pandas["id_moteur"].isin(m_train3)], FENETRE)
+    X3_test,  y3_test  = creer_sequences(df3_pandas[df3_pandas["id_moteur"].isin(m_test3)],  FENETRE)
+
+    modele3 = Sequential([
+        LSTM(64, input_shape=(FENETRE, len(capteurs_moy)), return_sequences=True),
+        Dropout(0.2),
+        LSTM(32),
+        Dropout(0.2),
+        Dense(16, activation="relu"),
+        Dense(1)
+    ])
+    modele3.compile(optimizer="adam", loss="mse", metrics=["mae"])
+
+    modele3.fit(
+        X3_train, y3_train,
+        epochs=100,
+        batch_size=64,
+        validation_split=0.1,
+        callbacks=[EarlyStopping(monitor="val_loss", patience=10, restore_best_weights=True)],
+        verbose=0
+    )
+
+    loss3, _ = modele3.evaluate(X3_test, y3_test, verbose=0)
+    rmse3    = np.sqrt(loss3)
+    diff     = rmse3 - gbt_base[dataset]
+
+    print(f"{dataset:<10} {rmse3:>12.2f} {gbt_base[dataset]:>12.2f} {diff:>+8.2f}")
+
+spark3.stop()
